@@ -74,3 +74,4 @@ void printObject(Value value)
         printf("%s", AS_CSTRING(value));
         break;
     }
+}
