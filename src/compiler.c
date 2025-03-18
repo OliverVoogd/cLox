@@ -592,7 +592,7 @@ static void expressionStatement()
     emitByte(OP_POP);
 }
 
-static void forStatment()
+static void forStatement()
 {
     beginScope();
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
@@ -606,7 +606,7 @@ static void forStatment()
     }
     else
     {
-        expressionStatment();
+        expressionStatement();
     }
 
     int loopStart = currentChunk()->count;
