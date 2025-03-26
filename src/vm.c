@@ -13,8 +13,17 @@
 
 VM vm;
 
-static Value clockNative(int argCount, Value *args)
+static void runtimeError(const char *format, ...);
+
+static Value clockNative(int argCount, Value *args, bool *success)
 {
+    if (argCount != 0)
+    {
+        runtimeError("Expected 0 arguments but got %d.", argCount);
+        *success = false;
+        return NUMBER_VAL(0);
+    }
+    *success = true;
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
@@ -128,10 +137,15 @@ static bool callValue(Value callee, int argCount)
         case OBJ_NATIVE:
         {
             NativeFn native = AS_NATIVE(callee);
-            Value result = native(argCount, vm.stackTop - argCount);
-            vm.stackTop -= argCount + 1;
-            push(result);
-            return true;
+            bool success = true;
+            Value result = native(argCount, vm.stackTop - argCount, &success);
+            if (success)
+            {
+                vm.stackTop -= argCount + 1;
+                push(result);
+                return true;
+            }
+            return false;
         }
         default:
             break; // Non-callable object type.
