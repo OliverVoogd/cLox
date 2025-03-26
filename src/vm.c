@@ -10,22 +10,9 @@
 #include "debug.h"
 #include "object.h"
 #include "memory.h"
+#include "native.h"
 
 VM vm;
-
-static void runtimeError(const char *format, ...);
-
-static Value clockNative(int argCount, Value *args, bool *success)
-{
-    if (argCount != 0)
-    {
-        runtimeError("Expected 0 arguments but got %d.", argCount);
-        *success = false;
-        return NUMBER_VAL(0);
-    }
-    *success = true;
-    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
-}
 
 static void resetStack()
 {
@@ -78,7 +65,7 @@ void initVM()
     initTable(&vm.strings);
 
     // Native functions
-    defineNative("clock", clockNative);
+    defineAllNatives(defineNative, runtimeError);
 }
 
 void freeVM()
