@@ -21,11 +21,11 @@
 
 typedef enum
 {
-    OBJ_CLOSURE,
-    OBJ_FUNCTION,
-    OBJ_NATIVE,
-    OBJ_STRING,
-    OBJ_UPVALUE
+    OBJ_CLOSURE,  // 0
+    OBJ_FUNCTION, // 1
+    OBJ_NATIVE,   // 2
+    OBJ_STRING,   // 3
+    OBJ_UPVALUE   // 4
 } ObjType;
 
 struct Obj

@@ -10,13 +10,21 @@
 #include "debug.h"
 #endif
 
+#define GC_HEAP_GROW_FACTOR 2
+
 void *reallocate(void *pointer, size_t oldSize, size_t newSize)
 {
+    vm.bytesAllocated += newSize - oldSize;
     if (newSize > oldSize)
     {
 #ifdef DEBUG_STRESS_GC
         collectGarbage();
 #endif
+
+        if (vm.bytesAllocated > vm.nextGC)
+        {
+            collectGarbage();
+        }
     }
     if (newSize == 0)
     {
@@ -42,13 +50,6 @@ void markObject(Obj *object)
     printf("\n");
 #endif
     object->isMarked = true;
-
-    // We don't need to gray natives or strings, as they can't have
-    // any references
-    if (object->type == OBJ_NATIVE || object->type == OBJ_STRING)
-    {
-        return;
-    }
 
     if (vm.grayCapacity < vm.grayCount + 1)
     {
@@ -163,22 +164,41 @@ void freeObjects()
 
 static void markRoots()
 {
+#ifdef DEBUG_LOG_GC
+    printf("\t-- gc mark stack slots begin\n");
+#endif
     for (Value *slot = vm.stack; slot < vm.stackTop; slot++)
     {
         markValue(*slot);
     }
-
+#ifdef DEBUG_LOG_GC
+    printf("\t-- end\n");
+    printf("\t-- gc mark closures begin\n");
+#endif
     for (int i = 0; i < vm.frameCount; i++)
     {
         markObject((Obj *)vm.frames[i].closure);
     }
-
+#ifdef DEBUG_LOG_GC
+    printf("\t-- end\n");
+    printf("\t-- gc mark open upvalues begin\n");
+#endif
     for (ObjUpvalue *upvalue = vm.openUpvalues; upvalue != NULL; upvalue = upvalue->next)
     {
         markObject((Obj *)upvalue);
     }
+
+#ifdef DEBUG_LOG_GC
+    printf("\t-- end\n\t-- gc mark globals begin\n");
+#endif
     markTable(&vm.globals);
+#ifdef DEBUG_LOG_GC
+    printf("\t-- end\n\t-- gc mark compiler roots begin\n");
+#endif
     markCompilerRoots();
+#ifdef DEBUG_LOG_GC
+    printf("\t-- end\n");
+#endif
 }
 
 static void traceReferences()
@@ -223,6 +243,7 @@ void collectGarbage()
 {
 #ifdef DEBUG_LOG_GC
     printf("-- gc begin\n");
+    size_t before = vm.bytesAllocated;
 #endif
 
     markRoots();
@@ -230,7 +251,10 @@ void collectGarbage()
     tableRemoveWhite(&vm.strings);
     sweep();
 
+    vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
 #ifdef DEBUG_LOG_GC
     printf("-- gc end\n");
+    printf("   collected %zu bytes (from %zu to %zu) next at %zu\n",
+           before - vm.bytesAllocated, before, vm.bytesAllocated, vm.nextGC);
 #endif
 }

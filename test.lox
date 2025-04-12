@@ -1,3 +1,7 @@
 var a = "hello world";
-
+a = "one";
+a = "two";
+a = 10;
+a = "three";
+a = "four";
 // TODO: add ++ and -- operators
