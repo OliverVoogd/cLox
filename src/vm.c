@@ -465,6 +465,9 @@ static InterpretResult run()
             push(result);
             frame = &vm.frames[vm.frameCount - 1];
         }
+        case OP_CLASS:
+            push(OBJ_VAL(newClass(READ_STRING())));
+            break;
         }
     }
 #undef READ_BYTE
