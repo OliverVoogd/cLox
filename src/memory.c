@@ -232,6 +232,7 @@ static void markRoots()
     printf("\t-- end\n\t-- gc mark compiler roots begin\n");
 #endif
     markCompilerRoots();
+    markObject((Obj *)vm.initString);
 #ifdef DEBUG_LOG_GC
     printf("\t-- end\n");
 #endif
