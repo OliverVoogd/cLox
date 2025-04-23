@@ -57,10 +57,10 @@ void markObject(Obj *object)
         vm.grayStack = (Obj **)realloc(vm.grayStack, sizeof(Obj *) * vm.grayCapacity);
     }
 
-    vm.grayStack[vm.grayCount++] = object;
-
     if (vm.grayStack == NULL)
         exit(1);
+
+    vm.grayStack[vm.grayCount++] = object;
 }
 
 void markValue(Value value)
@@ -127,6 +127,7 @@ static void blackenObject(Obj *object)
     }
     case OBJ_UPVALUE:
         markValue(((ObjUpvalue *)object)->closed);
+        break;
     case OBJ_NATIVE:
     case OBJ_STRING:
         break;
@@ -145,13 +146,16 @@ static void freeObject(Obj *object)
         break;
     case OBJ_CLASS:
     {
+        ObjClass *klass = (ObjClass *)object;
+        freeTable(&klass->methods);
         FREE(ObjClass, object);
         break;
     }
     case OBJ_CLOSURE:
     {
         ObjClosure *closure = (ObjClosure *)object;
-        FREE_ARRAY(ObjUpvalue *, closure->upvalues, closure->upvalueCount);
+        FREE_ARRAY(ObjUpvalue *, closure->upvalues,
+                   closure->upvalueCount);
         FREE(ObjClosure, object);
         break;
     }
@@ -183,19 +187,6 @@ static void freeObject(Obj *object)
         FREE(ObjUpvalue, object);
         break;
     }
-}
-
-void freeObjects()
-{
-    Obj *object = vm.objects;
-    while (object != NULL)
-    {
-        Obj *next = object->next;
-        freeObject(object);
-        object = next;
-    }
-
-    free(vm.grayStack);
 }
 
 static void markRoots()
@@ -294,4 +285,17 @@ void collectGarbage()
     printf("   collected %zu bytes (from %zu to %zu) next at %zu\n",
            before - vm.bytesAllocated, before, vm.bytesAllocated, vm.nextGC);
 #endif
+}
+
+void freeObjects()
+{
+    Obj *object = vm.objects;
+    while (object != NULL)
+    {
+        Obj *next = object->next;
+        freeObject(object);
+        object = next;
+    }
+
+    free(vm.grayStack);
 }
