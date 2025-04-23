@@ -23,3 +23,6 @@ print "Doughnut: ";
 d.cook();
 print "Cruller: ";
 c.cook();
+
+var a = 0/0;
+print a == a;
